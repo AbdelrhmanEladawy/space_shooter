@@ -19,8 +19,8 @@ using namespace std::chrono;
 #define DOWN 80
 
 // The default size of the Windows terminal is 25 rows x 80 columns
-#define SCREEN_WIDTH  80
-#define SCREEN_HEIGHT 25
+unsigned int SCREEN_WIDTH = 80;
+unsigned int SCREEN_HEIGHT = 25;
 
 
 char SpaceShip_shape[3][5] = { ' ' , ' ' , (char)30  , ' ' , ' ' ,
@@ -129,6 +129,8 @@ void WelcomeMessage()
     gotoxy(x, y + 7);
     printf("                       1. to start playing");
     gotoxy(x, y + 8);
+    printf("                       2. to test mode to test time complexity");
+    gotoxy(x, y + 9);
     printf("                       3. (or \"e\") to exit the game");
     gotoxy(x, y + 14);
     printf("team members : ");
@@ -435,11 +437,11 @@ public:
 	void Draw()
 	{
 		gotoxy(x, y);
-        printf("Â±Â±Â±Â±Â±");
+        printf("±±±±±");
         gotoxy(x, y + 1);
-        printf("|Â±Â±Â±|");
+        printf("|±±±|");
         gotoxy(x, y + 2);
-        printf("  Â±  ");
+        printf("  ±  ");
 	}
 
 	 // Erase the old enemyShip from screen
@@ -553,10 +555,13 @@ public:
 	}
 };
 
-void Game_Loop()
+void Game_Loop(int option = 1 , int N = 12) //option is the mode ,,, N : is number of enemys
 {
-    int score = 0;
 
+    auto start = high_resolution_clock::now();
+
+    int score = 0;
+    
 	SpaceShip space_ship( SCREEN_WIDTH/2 , SCREEN_HEIGHT-5 );
 	space_ship.DrawSpaceShipInfo(); //draw info
 
@@ -569,27 +574,31 @@ void Game_Loop()
 	list<Bullet *> enemyShip_Bullets;
     list<Bullet *>::iterator enemy_bullet_itr;
 
-	int number_of_enemy = 12;
+    //********************* make enemyShip and add it to list  *********************
+	int number_of_enemy = N;
 
-	for(int i = 10 ;i <= number_of_enemy*5  ; i += 6 ) //5 is the size of ship
-	{
-		enemy_ship.push_back(new EnemyShip( i+2 , 3 ,1 ) );
-	}
+    if (option == 1) //normal mode
+        for(int i = 10 ;i <= number_of_enemy*5  ; i += 6 ) //5 is the size of ship
+        {
+            enemy_ship.push_back(new EnemyShip( i+2 , 3 ,1 ) );
+        }
 
-    // for(int i = (SCREEN_WIDTH)/2-2 , j = 3, k = 1 , m = 0 ; m < number_of_enemy ; (i = i < (SCREEN_WIDTH)/2 ? (SCREEN_WIDTH)/2 + 5*k++ +2 : (SCREEN_WIDTH)/2 - 5*k++ -2 ) , m++ )
-	// {
-    //     if( i > SCREEN_WIDTH-6 || i < 3 )
-    //     {
-    //         i = (SCREEN_WIDTH)/2 + ( (j-3)/4 %2 == 0 ? 2 : -2) ;
-    //         j+=4;
-    //         k = 1;
-    //     }
-	// 	enemy_ship.push_back(new EnemyShip( i+2 , j ,1 ) );
-	// }
+    if (option == 2) //time mode option test
+        for(int i = (SCREEN_WIDTH)/2-2 , j = 3, k = 1 , m = 0 ; m < number_of_enemy ; (i = i < (SCREEN_WIDTH)/2 ? (SCREEN_WIDTH)/2 + 5*k++ +2 : (SCREEN_WIDTH)/2 - 5*k++ -2 ) , m++ )
+        {
+            if( i > SCREEN_WIDTH-5 || i < 3 )
+            {
+                i = (SCREEN_WIDTH)/2 + ( (j-3)/4 %2 == 0 ? 2 : -2) ;
+                j+=4;
+                k = 1;
+            }
+            enemy_ship.push_back(new EnemyShip( i+2 , j ,1 ) );
+        }
 
     //timer : is for calc time ... timer_count : counter for bullets ... mov_dir : the direction of enemy ship moving
     //for moving direction ... (0:stoped , 1:left , 2:rigth , 3:up , 4:down )
     int timer = 0 , timer_count = 0 , mov_dir = 2; 
+    bool test_mode_out = true; double  time_for_print=0; //for time test
 	while ( !space_ship.isDead() && !enemy_ship.empty() )
 	{
         if (timer == 10) //if the timer count 10, reset it.
@@ -619,7 +628,9 @@ void Game_Loop()
             }
             
         //****************************** moving enemy ships  ******************************
-            if(timer == 10)
+           if(option == 2 )
+                (*enemy_ship_itr)-> Move(0);
+            else if(timer == 10)
             {
                 if( mov_dir == 2) //2 means right
                 {
@@ -641,7 +652,7 @@ void Game_Loop()
             }
 		}
 
-        //****************************** moving enemy bullets  *****************************
+        //****************************** moving our ship bullets  *****************************
 		for (Ship_bullet_itr = SpaceShip_Bullets.begin(); Ship_bullet_itr != SpaceShip_Bullets.end(); Ship_bullet_itr++)
         { // For every Ship_bullet that is in space
             (*Ship_bullet_itr)->Move(1); //1 means up
@@ -652,7 +663,7 @@ void Game_Loop()
             }
         }
 
-        //***************************** moving our ship bullets  *****************************
+        //***************************** moving enemyenemy  bullets  *****************************
 		for (enemy_bullet_itr = enemyShip_Bullets.begin(); enemy_bullet_itr != enemyShip_Bullets.end(); enemy_bullet_itr++)
 		{ // For every bullet that is in space
 			(*enemy_bullet_itr)->Move(2); //2 means down
@@ -660,6 +671,8 @@ void Game_Loop()
 			{                     // If the bullet reached the end of the map
 				delete (*enemy_bullet_itr); // It gets deleted
 				enemy_bullet_itr = SpaceShip_Bullets.erase(enemy_bullet_itr);
+                if(option == 2) //time mode option test
+                    goto test_mode; //break the loop
 			}
 		}
 
@@ -689,6 +702,8 @@ void Game_Loop()
 			{
 				delete (*enemy_bullet_itr);
 				enemy_bullet_itr = enemyShip_Bullets.erase(enemy_bullet_itr);
+                if(option == 2) //time mode option test
+                    goto test_mode; //break the loop
 			}
 		}
 
@@ -698,6 +713,14 @@ void Game_Loop()
         gotoxy(56, 1);
         printf("%d", score);
         
+        if( test_mode_out == true && option == 2) //time mode option test
+        {
+            auto stop_1 = high_resolution_clock::now();
+            auto duration_1 = duration_cast<microseconds>(stop_1 - start);
+            time_for_print = (duration_1.count() / 1000.0);
+            test_mode_out = false;
+        }
+
         //************ this line of code is very important for visualization  ***************
         Sleep(50); // ** This is essential, otherwise the game would be unplayable **
 	}
@@ -708,6 +731,28 @@ void Game_Loop()
 		GameOverVictoryMessage();
 
     Sleep(2000);
+
+    test_mode : //label for goto
+    auto stop_2 = high_resolution_clock::now();
+    if (option == 2) //time mode option test
+    {
+        auto duration_2 = duration_cast<microseconds>(stop_2 - start);
+        gotoxy(0,SCREEN_HEIGHT+1);
+        
+        cout<<"for "<<number_of_enemy<<" enemy \t and \t "<<SCREEN_WIDTH<<" X "<<SCREEN_HEIGHT<<" dimensions"<<"\n";
+        cout<<"********************* time for just print the game and start it *********************\n";
+        cout << "time for just print the game is:- " << time_for_print/ 1000.0 << " milliseconds\n"<< endl;
+        cout << "time for just print the game is:- " << time_for_print/ 1000000.0 << " seconds\n"<< endl;
+
+        cout<<"********************* time for  time for 1 full loop iteration **********************\n";
+        cout << "time for  time for 1 full loop is:- " << (duration_2.count() / 1000.0) << " milliseconds\n"<< endl;
+        cout << "time for  time for 1 full loop is:- " << (duration_2.count() / 1000000.0) << " seconds\n"<< endl;
+        cout << "So , multiply this number by N loop of game until game over or win"<< endl;
+
+        cout<<"\n\n Press any key to continue";
+        _getch();
+    }
+
     system("cls");
     return;
 }
@@ -728,10 +773,25 @@ int main()
         {
             system("cls");
             DrawGameLimits();
-            Game_Loop();
+            Game_Loop(1);
         }
-
-        else if (op == '3' || op == 'e' )
+        else if (op == '2' || op == 't' )
+        {
+            system("cls");
+            int N ,sc_w,sc_h;
+            cout<<"enter the width of screen : ";
+            cin>>sc_w;
+            SCREEN_WIDTH = sc_w;
+            cout<<"enter the hight of screen : ";
+            cin>>sc_h;
+            SCREEN_HEIGHT = sc_h;
+            cout<<"enter the number of enemy : ";
+            cin>>N;
+            system("cls");
+            DrawGameLimits();
+            Game_Loop(2,N); //test_mode
+        }
+        else if (op == '3' || op == 'e' || op == 'E' )
         {
             gotoxy(0,SCREEN_HEIGHT+1);
             exit(0);
