@@ -4,7 +4,14 @@
 #include <windows.h>   // To take control over the terminal ... and use sleep function
 #include <conio.h>	   // to use getch() and kbhit() funcions
 #include <list>
+#include <random>
+#include <time.h>
+#include <chrono>
+//#include <time.h>
+//#include <unistd.h>
+
 using namespace std;
+using namespace std::chrono;
 
 #define UP 72 // arrow keys' ascii numbers
 #define LEFT 75
@@ -14,6 +21,7 @@ using namespace std;
 // The default size of the Windows terminal is 25 rows x 80 columns
 #define SCREEN_WIDTH  80
 #define SCREEN_HEIGHT 25
+
 
 char SpaceShip_shape[3][5] = { ' ' , ' ' , (char)30  , ' ' , ' ' ,
 						 ' ' , ' ' , (char)4   , ' ' , ' ' ,
@@ -39,6 +47,7 @@ void gotoxy(int x, int y)
 }
 
 // Hides the cursor in terminal
+//just to be more  smooth in printing
 void HideCursor()
 {
     HANDLE hCon = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -102,7 +111,7 @@ void DrawGameLimits()
 }
 
 void WelcomeMessage()
-{ // The main title, I tried to center it as best as I could
+{
     int x = 13;
     int y = 6;
     gotoxy(x, y);
@@ -116,15 +125,19 @@ void WelcomeMessage()
     gotoxy(x, y + 4);
     printf("      |_|");
     gotoxy(x, y + 6);
-    printf("                 Press any key to play");
-    gotoxy(x, y + 10);
+    printf("                 Press : ");    
+    gotoxy(x, y + 7);
+    printf("                       1. to start playing");
+    gotoxy(x, y + 8);
+    printf("                       3. (or \"e\") to exit the game");
+    gotoxy(x, y + 14);
     printf("team members : ");
-    gotoxy(x, y + 11);
+    gotoxy(x, y + 15);
     printf("		Abdelrhman Ahmed");
-	gotoxy(x, y + 12);
-	printf("		Abdelrhman");
-	gotoxy(x, y + 13);
-	printf("		Hassan");
+	gotoxy(x, y + 16);
+	printf("		Abdelrhman abdelnaser");
+	gotoxy(x, y + 17);
+	printf("		Hassan basiony");
 }
 
 // When you lose the game you see this in screen
@@ -163,6 +176,51 @@ void SpecialMessage()
     printf("Thanks for playing! :3");
 }
 
+class Bullet
+{
+private:
+    int x;
+    int y;
+
+public:
+    int X() { return x; }
+    int Y() { return y; }
+
+    Bullet(int _x, int _y)
+    {
+        x = _x;
+        y = _y;
+    }
+    
+    //check if the bullet reaches the bottom or top of the board
+    bool isOut()
+    {
+		if (y <= 3 || y >= SCREEN_HEIGHT - 3 )
+        {
+            gotoxy(x, y);
+            printf(" "); // It disappears
+            return true; // And informs that it should no longer exist
+        }
+        else
+            return false;
+    }
+   
+    void Erase() //disappears the old one
+    {
+        gotoxy(x, y);
+        printf(" ");
+    }
+
+    //change the coordinates of the bullet
+    void Move(int dir = 1) //for direction ... ( 1:up , 2:down )
+    {
+		Erase(); //disappears the old one
+		(dir == 1) ? (y--) : (y++) ; //if condition
+		gotoxy(x, y);
+		printf("*"); // The shape of the bullet
+    }
+};
+
 class SpaceShip
 {
 private:
@@ -192,7 +250,7 @@ public:
         return imDead;
     }
 
-    // Displays HP and energy points, I aligned them with the labels printed in DrawGameLimits
+    // Displays HP and energy points shape, I aligned them with the labels printed in DrawGameLimits
     void DrawSpaceShipInfo()
     {
         gotoxy(5, 1);
@@ -212,7 +270,7 @@ public:
         }
     }
 
-    // This is our spaceship body
+    // This is draw our spaceship body
     void Draw()
     {
         gotoxy(x, y);
@@ -223,7 +281,7 @@ public:
         printf("%c%c%c%c%c", 17, 30, 223, 30, 16);
     }
 
-    // Erase the old spaceship from screen
+    // To Erase the old spaceship from screen
     void Erase()
     {
         gotoxy(x, y);
@@ -234,7 +292,7 @@ public:
         printf("     ");
     }
 
-    // Triggered by the asteroids that hit the spaceship
+    // Triggered by the enemy ship buulet that hit the spaceship
     void Damage()
     {
         energy--;
@@ -242,12 +300,11 @@ public:
         {
             Explosion();
         }
-
         else 
         {
-            Erase(); // You can omit this part, is meant to visually tell you that you were hit
+            Erase(); // You can not omit this part, is meant to visually tell you that you were hit
             gotoxy(x, y);
-            printf("  *  ");
+            printf("  *  "); //damage shape
             gotoxy(x, y + 1);
             printf("  *  ");
             gotoxy(x, y + 2);
@@ -256,12 +313,12 @@ public:
         }
     }
 
-    // When you lose a heart :c
+    // When you lose a heart
     void Explosion()
     {
         hp--;
         Erase();
-        gotoxy(x, y);
+        gotoxy(x, y); //Explosion shape
         printf("  *  ");
         gotoxy(x, y + 1);
         printf("  *  ");
@@ -285,21 +342,34 @@ public:
         printf("* * *");
         Sleep(100);
 
+        // If you still have a heart or more
         if (hp > 0)
-        { // If you still have a heart or more
             energy = 5;
-        }
 
+        // If you don't
         else
-        { // If you don't
             imDead = true;
-        }
     }
 
+    //check if the Bullet Collision with our shape
+	bool Collision(Bullet B)
+	{   //+5 and +3 is the dimension of the shape
+		if ( ( (B.X() >= x) && (B.X() <= x+5) ) && ( (B.Y() >= y) && (B.Y() <=y+3) ) ) 
+        {
+            B.Erase();
+            Damage();
+			return true;
+        }
+
+		else 
+			return false;
+	}
+
     // The main function of the spaceship
+    //it is call draw function at the end
     void Move()
     {
-        if (_kbhit())
+        if (_kbhit())             //hit a key
         {                        // If you move the spaceship
            Erase();				 //to delete the old spaceship
             char key = _getch(); // What did you type?
@@ -336,24 +406,23 @@ public:
     }
 };
 
-class enemyShip
+class EnemyShip
 {
 private:
     int x;       // x coordinate
     int y;       // y coordinate
     int hp;      // heart points
     bool is_Destroyed; // is the ship dead?
-
 public:
 	int X() { return x; }
     int Y() { return y; }
     int HP() { return hp; }
 
-	enemyShip(int _x , int _y , int _hp = 1 )
+	EnemyShip(int _x , int _y , int _hp = 1 )
 	{
 		x = _x;
         y = _y;
-        hp = _hp;         // I designed the game to have 3 lifes
+        hp = _hp;              
         is_Destroyed = false; // By default you are not dead
 	};
 
@@ -362,14 +431,15 @@ public:
 		return is_Destroyed;
 	}
 
+    // This is draw our enemyship body
 	void Draw()
 	{
 		gotoxy(x, y);
-        printf("±±±±±");
+        printf("Â±Â±Â±Â±Â±");
         gotoxy(x, y + 1);
-        printf("|±±±|");
+        printf("|Â±Â±Â±|");
         gotoxy(x, y + 2);
-        printf("  ±  ");
+        printf("  Â±  ");
 	}
 
 	 // Erase the old enemyShip from screen
@@ -383,7 +453,7 @@ public:
         printf("     ");
     }
 
-	    // Triggered by the asteroids that hit the spaceship
+	// Triggered by the sapce ship bullet that hit the enemyship
     void Damage()
     {
         hp--;
@@ -432,100 +502,242 @@ public:
         printf(" * * ");
         gotoxy(x, y + 2);
         printf("* * *");
+		Erase();
         Sleep(100);
     }
 
-};
-
-class Bullet
-{
-private:
-    int x;
-    int y;
-
-public:
-    int X() { return x; }
-    int Y() { return y; }
-
-    Bullet(int _x, int _y)
-    {
-        x = _x;
-        y = _y;
-    }
-    
-    bool isOut()
-    {
-        if (y <= 3)
-        { // If the Ship_bullet reaches the top of the map
-            gotoxy(x, y);
-            printf(" "); // It disappears
-            return true; // And informs the ame that it should no longer exist :c
-        }
-        else
+    //check if the Bullet Collision with our shape
+	bool Collision(Bullet B)
+	{ //+5 and +3 is the dimension of the shape
+		if ( ( (B.X() >= x) && (B.X() <= x+5) ) && ( (B.Y() >= y) && (B.Y() <=y+3) ) )
         {
-            return false;
+            B.Erase();
+            Damage(); // The enemy_ship_itr hurts
+			return true;
         }
-    }
-    void Move()
-    {
-        gotoxy(x, y);
-        printf(" ");
-        y--;
-        gotoxy(x, y);
-        printf("."); // The shape of the Ship_bullet
-    }
+
+		else 
+			return false;
+	}
+
+    //it is call draw function at the end
+	void Move( int moving_dir = 0 )
+	{
+        Erase();
+		if( moving_dir ) //for moving direction ... (0:stoped , 1:left , 2:rigth , 3:up , 4:down )
+		{
+			switch (moving_dir)
+			{
+			case 1:
+				if (x > 2)
+					x -= 1;
+				break;
+			case 2:
+				if (x + 4 < SCREEN_WIDTH-3 )
+					x += 1;
+				break;
+			case 3:
+				if (y > 3)
+					y -= 1;
+				break;
+			case 4:
+				if (y + 2 < SCREEN_HEIGHT-3 )
+					y += 1;
+				break;
+			default:
+				break;
+			}
+		}
+
+		Draw();
+	}
 };
 
-int main()
+void Game_Loop()
 {
-	system("cls");
-	HideCursor();
-	DrawGameLimits();
+    int score = 0;
 
-	list<Bullet *> Ship_Bullets;          // We will use a dynamic list for the Bullets in the game
-    list<Bullet *>::iterator Ship_bullet; // And an iterator for the list
+	SpaceShip space_ship( SCREEN_WIDTH/2 , SCREEN_HEIGHT-5 );
+	space_ship.DrawSpaceShipInfo(); //draw info
 
-	SpaceShip ss(40,20);
+	list<Bullet *> SpaceShip_Bullets;          // We will use a dynamic list for the Bullets in the game
+    list<Bullet *>::iterator Ship_bullet_itr; // And an iterator for the list ... more faster
 
-	//there will be list of enemy
-	enemyShip es(40,3);
-	es.Draw();
+	list<EnemyShip *> enemy_ship;
+	list<EnemyShip *>::iterator enemy_ship_itr;
 
-	ss.DrawSpaceShipInfo();
-	int score = 0;
+	list<Bullet *> enemyShip_Bullets;
+    list<Bullet *>::iterator enemy_bullet_itr;
 
-	while ( true )
+	int number_of_enemy = 12;
+
+	for(int i = 10 ;i <= number_of_enemy*5  ; i += 6 ) //5 is the size of ship
 	{
+		enemy_ship.push_back(new EnemyShip( i+2 , 3 ,1 ) );
+	}
+
+    // for(int i = (SCREEN_WIDTH)/2-2 , j = 3, k = 1 , m = 0 ; m < number_of_enemy ; (i = i < (SCREEN_WIDTH)/2 ? (SCREEN_WIDTH)/2 + 5*k++ +2 : (SCREEN_WIDTH)/2 - 5*k++ -2 ) , m++ )
+	// {
+    //     if( i > SCREEN_WIDTH-6 || i < 3 )
+    //     {
+    //         i = (SCREEN_WIDTH)/2 + ( (j-3)/4 %2 == 0 ? 2 : -2) ;
+    //         j+=4;
+    //         k = 1;
+    //     }
+	// 	enemy_ship.push_back(new EnemyShip( i+2 , j ,1 ) );
+	// }
+
+    //timer : is for calc time ... timer_count : counter for bullets ... mov_dir : the direction of enemy ship moving
+    //for moving direction ... (0:stoped , 1:left , 2:rigth , 3:up , 4:down )
+    int timer = 0 , timer_count = 0 , mov_dir = 2; 
+	while ( !space_ship.isDead() && !enemy_ship.empty() )
+	{
+        if (timer == 10) //if the timer count 10, reset it.
+            timer = 0;   //reset the timer
+    
+        timer++; //each loop , inc the timer
+
+        //********************* add a new SpaceShip Bullet to list  *********************
 		if (_kbhit())
         {
             char key = _getch();
-            if (key == ' ')
-            { // If you press the space bar you add a Ship_bullet to the Ship_bullet list
-                Ship_Bullets.push_back(new Bullet(ss.X() + 2, ss.Y() - 1));
-            }
+            if (key == ' ')     // If you press the space bar you add a Ship_bullet to the Ship_bullet list
+                SpaceShip_Bullets.push_back(new Bullet(space_ship.X() + 2, space_ship.Y() - 1));
         }
 
-		for (Ship_bullet = Ship_Bullets.begin(); Ship_bullet != Ship_Bullets.end(); Ship_bullet++)
+		for(enemy_ship_itr = enemy_ship.begin(); enemy_ship_itr != enemy_ship.end(); enemy_ship_itr++)
+		{
+        //********************* add a new enemy Ship Bullet to list  *********************
+            if( rand()%10 == timer ) //if random number = to timer
+            {
+                timer_count++;       //counter +1 ,this count to make bullet more slower
+                if(timer_count == 3)
+                {
+                    enemyShip_Bullets.push_back(new Bullet((*enemy_ship_itr)->X() + 2, (*enemy_ship_itr)-> Y() + 1));
+                    timer_count = 0; //reset count
+                }
+            }
+            
+        //****************************** moving enemy ships  ******************************
+            if(timer == 10)
+            {
+                if( mov_dir == 2) //2 means right
+                {
+                    if ( (*enemy_ship.back()).X() + 6 < SCREEN_WIDTH -1  )
+                        (*enemy_ship_itr)-> Move(2); //2 means right
+                    else
+                        mov_dir = 1;
+                }
+
+                else if ( mov_dir == 1) //1 means left
+                {
+                    if( (*enemy_ship.front()).X() > 3 ) //3 is the begging of borad
+                        (*enemy_ship_itr)-> Move(1); //1 means left
+                    else
+                        mov_dir = 2;
+                }
+                else
+                    (*enemy_ship_itr)-> Move(0); //0 means constant , so just draw it
+            }
+		}
+
+        //****************************** moving enemy bullets  *****************************
+		for (Ship_bullet_itr = SpaceShip_Bullets.begin(); Ship_bullet_itr != SpaceShip_Bullets.end(); Ship_bullet_itr++)
         { // For every Ship_bullet that is in space
-            (*Ship_bullet)->Move();
-            if ((*Ship_bullet)->isOut())
+            (*Ship_bullet_itr)->Move(1); //1 means up
+            if ((*Ship_bullet_itr)->isOut())
             {                     // If the Ship_bullet reached the end of the map
-				delete (*Ship_bullet); // It gets deleted
-				Ship_bullet = Ship_Bullets.erase(Ship_bullet);
+				delete (*Ship_bullet_itr); // It gets deleted
+				Ship_bullet_itr = SpaceShip_Bullets.erase(Ship_bullet_itr);
             }
         }
 
-		ss.Move();		//move and draw
+        //***************************** moving our ship bullets  *****************************
+		for (enemy_bullet_itr = enemyShip_Bullets.begin(); enemy_bullet_itr != enemyShip_Bullets.end(); enemy_bullet_itr++)
+		{ // For every bullet that is in space
+			(*enemy_bullet_itr)->Move(2); //2 means down
+			if ((*enemy_bullet_itr)->isOut())
+			{                     // If the bullet reached the end of the map
+				delete (*enemy_bullet_itr); // It gets deleted
+				enemy_bullet_itr = SpaceShip_Bullets.erase(enemy_bullet_itr);
+			}
+		}
+
+        //******************* Collision enemy_ship with our ship bullets   *******************
+		for (enemy_ship_itr = enemy_ship.begin(); enemy_ship_itr != enemy_ship.end(); enemy_ship_itr++)
+		{
+			for ( Ship_bullet_itr = SpaceShip_Bullets.begin() ; Ship_bullet_itr != SpaceShip_Bullets.end() ;Ship_bullet_itr++ )
+			{										
+				if ( (*enemy_ship_itr)-> Collision( **Ship_bullet_itr)  )
+				{
+					delete (*Ship_bullet_itr);
+					Ship_bullet_itr = SpaceShip_Bullets.erase(Ship_bullet_itr);
+					if( (*enemy_ship_itr)-> isDestroyed() )
+					{
+						delete (*enemy_ship_itr);
+						enemy_ship_itr = enemy_ship.erase(enemy_ship_itr);
+						score += 10;		// you get 10 points
+					}
+				}
+			}
+		}
+
+        //******************* Collision our ship with enemy ship bullets   *******************
+		for ( enemy_bullet_itr = enemyShip_Bullets.begin() ; enemy_bullet_itr != enemyShip_Bullets.end() ;enemy_bullet_itr++ )
+		{										
+			if ( space_ship.Collision( **enemy_bullet_itr)  )
+			{
+				delete (*enemy_bullet_itr);
+				enemy_bullet_itr = enemyShip_Bullets.erase(enemy_bullet_itr);
+			}
+		}
+
+        //*************************** move out ship and draw it   ***************************
+		space_ship.Move();
+        
         gotoxy(56, 1);
         printf("%d", score);
-        Sleep(30); // ** This is essential, otherwise the game would be unplayable **
-
+        
+        //************ this line of code is very important for visualization  ***************
+        Sleep(50); // ** This is essential, otherwise the game would be unplayable **
 	}
 	
-	if (!ss.isDead())  // If you died
-        GameOverVictoryMessage();
+	if ( space_ship.isDead() )  // If you died
+		GameOverDefeatMessage();
     else  // If you won
-        GameOverDefeatMessage();
+		GameOverVictoryMessage();
+
+    Sleep(2000);
+    system("cls");
+    return;
+}
+
+int main()
+{
+    srand((unsigned)time(NULL));
+	HideCursor();
+    system("cls");
+
+    do
+    {
+        WelcomeMessage();
+        gotoxy(SCREEN_WIDTH/2,SCREEN_HEIGHT/2);
+        char op = getche();
+
+        if (op == '1' || op == ' ')
+        {
+            system("cls");
+            DrawGameLimits();
+            Game_Loop();
+        }
+
+        else if (op == '3' || op == 'e' )
+        {
+            gotoxy(0,SCREEN_HEIGHT+1);
+            exit(0);
+        }
+
+    } while (1);
 
 	return 0;
 }
