@@ -27,9 +27,9 @@ char SpaceShip_shape[3][5] = { ' ' , ' ' , (char)30  , ' ' , ' ' ,
 						 ' ' , ' ' , (char)4   , ' ' , ' ' ,
 						 (char)17  , (char)30  , (char)223 , (char)30  , (char)16	};
 
-char enemyShip_shape[3][5] = { (char)0xfff1 , (char)0xfff1 , (char)0xfff1 , (char)0xfff1 , (char)0xfff1 ,
-						       '|', (char)0xfff1, (char)0xfff1, (char)0xfff1, '|',
-						       ' ', ' ', (char)0xfff1, ' ', ' ',};
+char enemyShip_shape[3][5] = { (char)0x00B1 , (char)0x00B1 , (char)0x00B1 , (char)0x00B1 , (char)0x00B1 ,
+						       '|', (char)0x00B1, (char)0x00B1, (char)0x00B1, '|',
+						       ' ', ' ', (char)0x00B1, ' ', ' ',};
 
 char damage_shape[3][5] = { ' ' , ' ' , '*' , ' ' , ' ' ,
 						    ' ' , ' ' , '*' , ' ' , ' ' ,
@@ -437,11 +437,11 @@ public:
 	void Draw()
 	{
 		gotoxy(x, y);
-        printf("±±±±±");
+        printf("%c%c%c%c%c", 0x00B1, 0x00B1, 0x00B1, 0x00B1, 0x00B1);
         gotoxy(x, y + 1);
-        printf("|±±±|");
+        printf("|%c%c%c|", 0x00B1, 0x00B1, 0x00B1, 0x00B1, 0x00B1);
         gotoxy(x, y + 2);
-        printf("  ±  ");
+        printf("  %c  ", 0x00B1);
 	}
 
 	 // Erase the old enemyShip from screen
@@ -759,16 +759,17 @@ void Game_Loop(int option = 1 , int N = 12) //option is the mode ,,, N : is numb
 
 int main()
 {
+
     srand((unsigned)time(NULL));
 	HideCursor();
-    system("cls");
-
+    system("cls");    
     do
     {
+        SCREEN_WIDTH = 80;
+        SCREEN_HEIGHT = 25;
         WelcomeMessage();
         gotoxy(SCREEN_WIDTH/2,SCREEN_HEIGHT/2);
         char op = getche();
-
         if (op == '1' || op == ' ')
         {
             system("cls");
