@@ -19,8 +19,8 @@ using namespace std::chrono;
 #define DOWN 80
 
 // The default size of the Windows terminal is 25 rows x 80 columns
-unsigned int SCREEN_WIDTH = 80;
-unsigned int SCREEN_HEIGHT = 25;
+int SCREEN_WIDTH = 80;
+int SCREEN_HEIGHT = 25;
 
 
 char SpaceShip_shape[3][5] = { ' ' , ' ' , (char)30  , ' ' , ' ' ,
@@ -439,7 +439,7 @@ public:
 		gotoxy(x, y);
         printf("%c%c%c%c%c", 0x00B1, 0x00B1, 0x00B1, 0x00B1, 0x00B1);
         gotoxy(x, y + 1);
-        printf("|%c%c%c|", 0x00B1, 0x00B1, 0x00B1, 0x00B1, 0x00B1);
+        printf("|%c%c%c|", 0x00B1, 0x00B1, 0x00B1);
         gotoxy(x, y + 2);
         printf("  %c  ", 0x00B1);
 	}
